@@ -1,9 +1,14 @@
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 from django.http import HttpResponse
 from . models import Genre, Author, Book, BookInstance
 from django.views.generic import ListView, DetailView
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic.edit import FormMixin
+from . forms import BookReviewForm
+from django.contrib import messages
 
 # Create your views here.
 
@@ -13,13 +18,16 @@ def index(request):
     book_instance_count = BookInstance.objects.count()
     book_instance_available_count = BookInstance.objects.filter(status='a').count()
     author_count = Author.objects.count()
+    visits_count = request.session.get('visits_count', 1)
+    request.session['visits_count'] = visits_count + 1
 
     context = {
         'book_count': books_count, 
         'book_instance_count': book_instance_count, 
         'book_instance_available_count': book_instance_available_count, 
         'author_count': author_count,
-        'genre_count': Genre.objects.count()
+        'genre_count': Genre.objects.count(),
+        'visits_count': visits_count,
     }
 
     return render(request, 'library/index.html', context)
@@ -59,8 +67,46 @@ class BookListView(ListView):
         return context
 
 
-
-
-class BookDetailView(DetailView):
+class BookDetailView(FormMixin, DetailView):
     model = Book
     template_name = 'library/book_detail.html'
+    form_class = BookReviewForm
+
+    def get_success_url(self) -> str:
+        return reverse('book', kwargs={'pk': self.get_object().id})
+
+    def post(self, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            messages.error(self.request, 'You are posting too much')
+            return self.form_invalid(form)
+
+    def get_initial(self):
+        return {
+            'book': self.get_object(),
+            'reader': self.request.user,
+        }
+
+    def form_valid(self, form):
+        form.instance.book = self.get_object()
+        form.instance.reader = self.request.user
+        form.save()
+        messages.success(self.request, 'Review posted successfuly')
+        return super().form_valid(form)
+
+
+
+class UserBookListView(LoginRequiredMixin, ListView):
+    model = BookInstance
+    template_name = 'library/user_book_list.html'
+    paginate_by =10
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        queryset = queryset.filter(reader=self.request.user).order_by('due_back')
+        return queryset
+        
+

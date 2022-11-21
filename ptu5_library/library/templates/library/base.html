@@ -16,14 +16,32 @@
                 <a href="{% url 'index' %}">Home</a>
                 <a href="{% url 'books' %}">Books</a>
                 <a href="{% url 'authors' %}">Authors</a>
-                <a href="{% url 'admin:index' %}">Admin</a>
+                <span class="spacer"></span>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'profile' %}">{{ user }}</a>
+                    <a href="{% url 'user_books' %}">My Books</a>
+                    {% if user.is_superuser or user.is_staff %}
+                        <a href="{% url 'admin:index' %}">Admin</a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}">Logout</a>
+                {% else %}
+                    <a href="{% url 'register' %}">Register</a>
+                    <a href="{% url 'login' %}{% if not '/accounts/' in request.path != '/accounts/logout/' %}?next={{ request.path }}{%endif%}">Login</a>
+                {% endif %}
             {% endblock nav %}
         
         </div>
     </header>
     <main>
         <div class="container">
-        {% block content %}{% endblock content %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+            {% endif %}
+        {% block content %}
+
+        {% endblock content %}
         </div>
     </main>
     <footer>

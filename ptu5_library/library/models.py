@@ -1,7 +1,10 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 import uuid
 from django.utils.html import format_html
 from django.urls import reverse_lazy, reverse
+from django.utils.timezone import datetime
+from tinymce.models import HTMLField
 
 class Genre(models.Model):
     name = models.CharField('name', max_length=200, help_text='Enter name of book genre')
@@ -36,7 +39,7 @@ class Author(models.Model):
 
 class Book(models.Model):
     title = models.CharField('title', max_length=255)
-    summary = models.TextField('summary')
+    summary = HTMLField('summary')
     isbn = models.CharField('ISBN', max_length=13, null=True, blank=True, 
         help_text='<a href="https://www.isbn-international.org/content/what-isbn">ISBN kodas</a> consisting of 13 symbols')
     author = models.ForeignKey(
@@ -44,6 +47,7 @@ class Book(models.Model):
         null=True, blank=True, related_name='books', 
     )
     genre = models.ManyToManyField(Genre, help_text='Choose genre(s) for this book', verbose_name='genre(s)')
+    cover = models.ImageField("cover", upload_to='covers', blank=True, null=True)
 
     def __str__(self) -> str:
         return f'{self.author} - {self.title}'
@@ -72,9 +76,39 @@ class BookInstance(models.Model):
     )
 
     status = models.CharField('status', max_length=1, choices=LOAN_STATUS, default='m')
+    reader = models.ForeignKey(
+        get_user_model(), 
+        verbose_name="reader", 
+        on_delete=models.SET_NULL, 
+        null=True, blank=True, 
+        related_name='taken_books'
+    )
+
+    @property
+    def is_overdue(self):
+        if self.due_back and self.due_back < datetime.date(datetime.now()):
+            return True
+        return False
 
     def __str__(self) -> str:
         return f'{self.unique_id}: {self.book.title}'
 
     class Meta:
         ordering = ['due_back']
+
+
+class BookReview(models.Model):
+
+    book = models.ForeignKey(Book, verbose_name='book', on_delete=models.CASCADE, related_name='reviews')
+
+    reader = models.ForeignKey(get_user_model(), verbose_name='reader', on_delete=models.CASCADE, related_name='book_reviews')
+
+    created_at = models.DateTimeField('created at', auto_now_add=True)
+
+    content = models.TextField('content', max_length=10000)
+
+    def __str__(self) -> str:
+        return f'{self.reader} on {self.book} at {self.created_at}'
+
+    class Meta:
+        ordering = ('-created_at', )
