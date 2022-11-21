@@ -1,0 +1,11 @@
+{% extends 'library/base.html' %}
+{% block title %}Updating {{ block.super }} profile{% endblock title %}
+{% block content %}
+<h1>Updating User Profile</h1>
+<form action="" method="post">
+    {% csrf_token %}
+    {{ user_form.as_p }}
+    {{ profile_form.as_p }}
+    <button type="submit">Update</button>
+</form>
+{% endblock content %}

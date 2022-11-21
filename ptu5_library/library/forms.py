@@ -2,6 +2,7 @@ from django import forms
 from . models import BookReview
 from  django.utils.timezone import datetime, timedelta
 
+
 class BookReviewForm(forms.ModelForm):
 
     def is_valid(self):
@@ -24,3 +25,5 @@ class BookReviewForm(forms.ModelForm):
             'book': forms.HiddenInput(),
             'reader': forms.HiddenInput(),
         }
+
+
