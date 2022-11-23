@@ -171,8 +171,10 @@ table {
     justify-self: stretch;
 }
 
-.form-grid input {
-    width: 20%;
+.form-grid input[type="text"], 
+.form-grid input[type="email"], 
+.form-grid input[type="password"] {
+    width: 90%;
 
 }
 
@@ -230,6 +232,13 @@ table {
     margin: 0;
 }
 
+.book-review h4 img {
+    max-height: 1.5rem;
+    float: left;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+}
+
 .review-form label {
     display: none;
 }
@@ -261,4 +270,8 @@ table {
 
 .button:hover {
     background-color: #ddd;
+}
+
+.my-books-table {
+    grid-template-columns: 5fr 1fr 1fr 1fr;
 }
